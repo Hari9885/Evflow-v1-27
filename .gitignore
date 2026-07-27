@@ -1,0 +1,10 @@
+.DS_Store
+node_modules/
+.next/
+.env.local
+.vercel/
+Kishore-v1.zip
+Kishore-v1/evflow-app/android/app/build/
+Kishore-v1/evflow-app/android/build/
+Kishore-v1/evflow-app/android/.gradle/
+Kishore-v1/evflow-app/android/local.properties

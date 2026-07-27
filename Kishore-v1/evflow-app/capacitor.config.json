@@ -1,0 +1,9 @@
+{
+  "appId": "com.evflow.app",
+  "appName": "EVFLOW",
+  "webDir": "www",
+  "server": {
+    "url": "https://evflow-web.vercel.app",
+    "androidScheme": "https"
+  }
+}

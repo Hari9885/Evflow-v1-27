@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* Light-only, mobile-first. No dark mode by design (hackathon scope). */
+body {
+  background: #f5f5f4; /* desktop gutters around the phone-width app */
+  color: #1c1917;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
