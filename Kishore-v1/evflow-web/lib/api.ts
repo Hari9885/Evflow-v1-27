@@ -10,6 +10,10 @@ export type Vehicle = {
   maxChargeKw: number;
 };
 
+// No vehicleType field in the contract's Vehicle schema — batteryKwh alone
+// separates two-wheelers (2-5 kWh) from cars (24+ kWh) at this fleet's scale.
+export const isBike = (v: Vehicle) => v.batteryKwh < 10;
+
 export type Charger = {
   id: string;
   name: string;

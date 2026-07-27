@@ -15,12 +15,17 @@ const CHARGER_NEAR_KM = 5;       // charger must be within 5 km of a route point
 const CHARGER_EFFICIENCY = 0.9;  // charging losses
 
 // ---- in-memory data ----
+// Cars use CCS2 fast charging; 2-wheelers here are modeled as low-power
+// Type2/AC home charging — approximate spec-sheet figures, tune freely.
 const vehicles = [
   { id: 1, name: 'Tata Nexon EV LR', batteryKwh: 40.5, baseWhPerKm: 145, connectorType: 'CCS2', maxChargeKw: 50 },
   { id: 2, name: 'MG ZS EV', batteryKwh: 50.3, baseWhPerKm: 170, connectorType: 'CCS2', maxChargeKw: 76 },
   { id: 3, name: 'Tata Tiago EV', batteryKwh: 24.0, baseWhPerKm: 110, connectorType: 'CCS2', maxChargeKw: 25 },
+  { id: 4, name: 'Ather 450X', batteryKwh: 2.9, baseWhPerKm: 20, connectorType: 'Type2', maxChargeKw: 1.2 },
+  { id: 5, name: 'Ola S1 Pro', batteryKwh: 4.0, baseWhPerKm: 22, connectorType: 'Type2', maxChargeKw: 0.75 },
+  { id: 6, name: 'Bajaj Chetak', batteryKwh: 3.0, baseWhPerKm: 28, connectorType: 'Type2', maxChargeKw: 0.75 },
 ];
-let nextVehicleId = 4;
+let nextVehicleId = 7;
 
 // 18 chargers along NH275, ordered Bengaluru -> Mysuru.
 const CH = (id, name, lat, lng, powerKw, connectorTypes, operator, address) =>

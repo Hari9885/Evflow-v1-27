@@ -28,6 +28,7 @@ EV trip planner, Bengaluru→Mysuru corridor. Hari = frontend + infra (this mach
 2. **Kishore integration** — when his Spring Boot is live: swap `NEXT_PUBLIC_API_URL` in Vercel env + `.env.local`, redeploy. Nothing else. His Day-1 deliverable is a deployed base URL.
 3. **Day 4-5 roadmap items** — demo rehearsal ×5, screen-recorded fallback, pitch deck (roadmap slide = the deliberate cuts: voice, BLE/OBD, 2W/bus, real-time OCPI).
 4. **Phone test** — user hadn't confirmed testing live app on phone yet.
+5. **Backend Day 2-3 remaining** — Route/Trip endpoints (`POST /api/route/plan` energy model + stop insertion, trip start/complete/history), global error-shape handler, real OCM charger seeding + hand-verification of 15-20 corridor chargers, deploy to Railway with CORS + send base URL. See `kishore_evflow-backend/` (Day 1 done, committed 2026-07-27, not pushed).
 
 ## Gotchas / decisions already made (don't re-litigate)
 
@@ -39,6 +40,7 @@ EV trip planner, Bengaluru→Mysuru corridor. Hari = frontend + infra (this mach
 - `Kishore-v1.zip` on Desktop contains `.env.local` with the real Anthropic key — user was warned NOT to send it. If still present, delete it or rebuild clean.
 - evflow-web had an inner `.git`; removed when the monorepo was created. Repo root = `~/Desktop/EVFLOW/`.
 - Railway CLI + Vercel CLI + gh (Hari9885) all logged in on this machine.
+- `kishore_evflow-backend/` was a bare Spring Boot skeleton (just the default Application class, mysql-connector-j dependency though contract needs Postgres) until this session. Now has Day-1 scope: Vehicle+Charger entities/repos/controllers, CORS, seed data — see `kishore's_work.pdf` for the frozen contract this follows. Verified locally against brew-installed Postgres (`brew services start postgresql@16`, db/user `evflow`/`evflow`). Route/Trip endpoints still Kishore's to build (Day 2-3), or ask here to continue them.
 
 ## Run locally
 

@@ -57,7 +57,7 @@ function buildRoute() {
 async function main() {
   // 1. vehicles seed
   const vehicles = await (await json('GET', '/api/vehicles')).json();
-  assert.strictEqual(vehicles.length, 3, 'expected exactly 3 seed vehicles');
+  assert.strictEqual(vehicles.length, 6, 'expected exactly 6 seed vehicles (3 cars + 3 bikes)');
   assert.ok(vehicles.every(v => v.id && v.name && v.batteryKwh > 0 && v.baseWhPerKm > 0 && v.connectorType && v.maxChargeKw > 0),
     'vehicle shape wrong');
 

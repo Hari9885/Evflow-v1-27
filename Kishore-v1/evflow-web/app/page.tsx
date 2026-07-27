@@ -1,17 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useJsApiLoader } from "@react-google-maps/api";
 import MapPanel from "@/components/MapPanel";
 import PlannerSheet, { type PlannerState } from "@/components/PlannerSheet";
 import { api, errorMessage, type Charger } from "@/lib/api";
 import { buildPlanPoints } from "@/lib/elevation";
+import { loadProfile } from "@/lib/profile";
 
 const MAPS_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ?? "";
 const LIBRARIES: "places"[] = ["places"];
 
 const INITIAL: PlannerState = {
-  step: "vehicle",
+  step: "route",
   vehicles: [],
   vehicleId: null,
   startBatteryPercent: 90,
@@ -39,11 +41,26 @@ function MapsLoader({ children }: { children: (isLoaded: boolean) => React.React
 }
 
 export default function Home() {
+  const router = useRouter();
   const [state, setState] = useState<PlannerState>(INITIAL);
+  const [ready, setReady] = useState(false);
   const patch = useCallback(
     (p: Partial<PlannerState>) => setState((s) => ({ ...s, ...p })),
     []
   );
+
+  useEffect(() => {
+    // Reads localStorage (unavailable during SSR), so it has to run after
+    // mount rather than as a lazy useState initializer.
+    const profile = loadProfile();
+    if (!profile) {
+      router.replace("/login");
+      return;
+    }
+    /* eslint-disable-next-line react-hooks/set-state-in-effect */
+    patch({ vehicleId: profile.vehicleId, startBatteryPercent: profile.startBatteryPercent });
+    setReady(true);
+  }, [patch, router]);
 
   const loadVehicles = useCallback(() => {
     api
@@ -53,8 +70,8 @@ export default function Home() {
   }, [patch]);
 
   useEffect(() => {
-    loadVehicles();
-  }, [loadVehicles]);
+    if (ready) loadVehicles();
+  }, [ready, loadVehicles]);
 
   async function planTrip() {
     const { origin, dest, vehicleId, startBatteryPercent, vehicles } = state;
@@ -149,25 +166,30 @@ export default function Home() {
     }));
   }
 
+  const showMap = state.step === "result";
+
   const body = (isLoaded: boolean) => (
     <main className="mx-auto flex h-dvh w-full max-w-md flex-col overflow-hidden bg-white shadow-xl">
-      <div className="relative h-[55dvh] shrink-0">
-        <MapPanel
-          hasKey={!!MAPS_KEY}
-          isLoaded={isLoaded}
-          directions={state.directions}
-          chargers={state.chargers}
-          stops={state.plan?.chargingStops ?? []}
-          onSelectCharger={(c) => patch({ selectedCharger: c })}
-        />
-        <header className="pointer-events-none absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 shadow">
-          <span className="text-sm font-bold tracking-tight text-blue-700">EVFLOW</span>
-        </header>
-      </div>
+      {showMap && (
+        <div className="relative h-[55dvh] shrink-0">
+          <MapPanel
+            hasKey={!!MAPS_KEY}
+            isLoaded={isLoaded}
+            directions={state.directions}
+            chargers={state.chargers}
+            stops={state.plan?.chargingStops ?? []}
+            onSelectCharger={(c) => patch({ selectedCharger: c })}
+          />
+          <header className="pointer-events-none absolute left-3 top-3 rounded-full bg-white/95 px-3 py-1 shadow">
+            <span className="text-sm font-bold tracking-tight text-blue-700">EVFLOW</span>
+          </header>
+        </div>
+      )}
       <PlannerSheet
         state={state}
         hasKey={!!MAPS_KEY}
         isLoaded={isLoaded}
+        floating={showMap}
         onPatch={patch}
         onPlan={planTrip}
         onStartTrip={startTrip}
@@ -177,6 +199,8 @@ export default function Home() {
       />
     </main>
   );
+
+  if (!ready) return null;
 
   return MAPS_KEY ? <MapsLoader>{body}</MapsLoader> : body(false);
 }

@@ -19,7 +19,7 @@ export type Place = { name: string; lat: number; lng: number };
 // The single top-level state object. The Day-4 assistant gets read access to
 // this whole thing — keep everything it needs to answer questions in here.
 export type PlannerState = {
-  step: "vehicle" | "route" | "result";
+  step: "route" | "result";
   vehicles: Vehicle[];
   vehicleId: string | null;
   startBatteryPercent: number;
@@ -35,7 +35,6 @@ export type PlannerState = {
   error: string | null;
 };
 
-const KARNATAKA_BOUNDS = { south: 11.5, west: 74.0, north: 18.5, east: 78.6 };
 const DEMO = {
   origin: { name: "Bengaluru", lat: 12.9716, lng: 77.5946 },
   dest: { name: "Mysuru", lat: 12.3052, lng: 76.6552 },
@@ -45,6 +44,7 @@ type Props = {
   state: PlannerState;
   hasKey: boolean;
   isLoaded: boolean;
+  floating: boolean;
   onPatch: (p: Partial<PlannerState>) => void;
   onPlan: () => void;
   onStartTrip: () => void;
@@ -97,7 +97,6 @@ function PlaceInput({
             }
           }}
           options={{
-            bounds: KARNATAKA_BOUNDS,
             componentRestrictions: { country: "in" },
             fields: ["name", "formatted_address", "geometry.location"],
           }}
@@ -118,6 +117,7 @@ export default function PlannerSheet({
   state,
   hasKey,
   isLoaded,
+  floating,
   onPatch,
   onPlan,
   onStartTrip,
@@ -133,8 +133,16 @@ export default function PlannerSheet({
       : null;
 
   return (
-    <section className="relative z-10 -mt-4 flex min-h-0 flex-1 flex-col rounded-t-2xl bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.10)]">
-      <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-stone-200" aria-hidden />
+    <section
+      className={
+        floating
+          ? "relative z-10 -mt-4 flex min-h-0 flex-1 flex-col rounded-t-2xl bg-white shadow-[0_-4px_16px_rgba(0,0,0,0.10)]"
+          : "flex min-h-0 flex-1 flex-col bg-white"
+      }
+    >
+      {floating && (
+        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-stone-200" aria-hidden />
+      )}
 
       <div className="min-h-0 flex-1 overflow-y-auto">
         {s.error && (
@@ -151,10 +159,15 @@ export default function PlannerSheet({
             mapsReady={isLoaded}
             onClose={() => onPatch({ selectedCharger: null })}
           />
-        ) : s.step === "vehicle" ? (
-          <VehicleStep s={s} onPatch={onPatch} onRetryVehicles={onRetryVehicles} />
         ) : s.step === "route" ? (
-          <RouteStep s={s} hasKey={hasKey} isLoaded={isLoaded} onPatch={onPatch} onPlan={onPlan} />
+          <RouteStep
+            s={s}
+            hasKey={hasKey}
+            isLoaded={isLoaded}
+            onPatch={onPatch}
+            onPlan={onPlan}
+            onRetryVehicles={onRetryVehicles}
+          />
         ) : (
           <ResultStep
             s={s}
@@ -304,22 +317,35 @@ function AssistantBar({ s }: { s: PlannerState }) {
   );
 }
 
-function VehicleStep({
+function RouteStep({
   s,
+  hasKey,
+  isLoaded,
   onPatch,
+  onPlan,
   onRetryVehicles,
 }: {
   s: PlannerState;
+  hasKey: boolean;
+  isLoaded: boolean;
   onPatch: Props["onPatch"];
+  onPlan: () => void;
   onRetryVehicles: () => void;
 }) {
+  const ready = hasKey && isLoaded;
+  const vehicle = s.vehicles.find((v) => v.id === s.vehicleId) ?? null;
   return (
     <div className="flex flex-col gap-3 p-4">
-      <h1 className="text-base font-semibold text-stone-900">Choose your EV</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-base font-semibold text-stone-900">Where to?</h1>
+        <a href="/login" className="text-xs font-medium text-blue-700">
+          ← Change vehicle
+        </a>
+      </div>
 
       {s.vehicles.length === 0 ? (
-        <div className="rounded-xl bg-stone-50 p-4 text-center text-sm text-stone-500">
-          <p>Loading vehicles… (is the API running?)</p>
+        <div className="rounded-xl bg-stone-50 p-3 text-center text-xs text-stone-500">
+          <p>Loading vehicle… (is the API running?)</p>
           <button
             onClick={onRetryVehicles}
             className="mt-2 rounded-lg bg-stone-200 px-3 py-1.5 text-xs font-medium text-stone-700 active:bg-stone-300"
@@ -328,83 +354,13 @@ function VehicleStep({
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
-          {s.vehicles.map((v) => (
-            <button
-              key={v.id}
-              onClick={() => onPatch({ vehicleId: v.id })}
-              className={`rounded-xl border p-3 text-left ${
-                s.vehicleId === v.id
-                  ? "border-blue-600 bg-blue-50 ring-1 ring-blue-600"
-                  : "border-stone-200 bg-white active:bg-stone-50"
-              }`}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-stone-900">{v.name}</span>
-                <span className="text-xs text-stone-500">{v.batteryKwh} kWh</span>
-              </div>
-              <p className="mt-1 text-xs text-stone-500">
-                {v.connectorType} · up to {v.maxChargeKw} kW · {v.baseWhPerKm} Wh/km
-              </p>
-            </button>
-          ))}
-        </div>
+        vehicle && (
+          <div className="rounded-xl bg-stone-50 px-3 py-2 text-xs text-stone-500">
+            <span className="font-semibold text-stone-700">{vehicle.name}</span> · {s.startBatteryPercent}%
+            battery
+          </div>
+        )
       )}
-
-      <div>
-        <label htmlFor="battery" className="mb-1 flex justify-between text-xs font-medium text-stone-500">
-          <span>Current battery</span>
-          <span className="font-semibold text-stone-900">{s.startBatteryPercent}%</span>
-        </label>
-        <input
-          id="battery"
-          type="range"
-          min={10}
-          max={100}
-          value={s.startBatteryPercent}
-          onChange={(e) => onPatch({ startBatteryPercent: Number(e.target.value) })}
-          className="w-full accent-blue-700"
-        />
-      </div>
-
-      <button
-        className={primaryBtn}
-        disabled={!s.vehicleId}
-        onClick={() => onPatch({ step: "route", error: null })}
-      >
-        Continue
-      </button>
-
-      <TripHistory />
-    </div>
-  );
-}
-
-function RouteStep({
-  s,
-  hasKey,
-  isLoaded,
-  onPatch,
-  onPlan,
-}: {
-  s: PlannerState;
-  hasKey: boolean;
-  isLoaded: boolean;
-  onPatch: Props["onPatch"];
-  onPlan: () => void;
-}) {
-  const ready = hasKey && isLoaded;
-  return (
-    <div className="flex flex-col gap-3 p-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-base font-semibold text-stone-900">Where to?</h1>
-        <button
-          onClick={() => onPatch({ step: "vehicle" })}
-          className="text-xs font-medium text-blue-700"
-        >
-          ← Vehicle
-        </button>
-      </div>
 
       <PlaceInput
         label="Origin"
@@ -439,9 +395,11 @@ function RouteStep({
       </button>
       {!hasKey && (
         <p className="text-xs text-stone-400">
-          Planning needs the Google Maps key — see the card in the map area.
+          Planning needs NEXT_PUBLIC_GOOGLE_MAPS_API_KEY set in .env.local.
         </p>
       )}
+
+      <TripHistory />
     </div>
   );
 }
