@@ -25,6 +25,7 @@ public class Charger {
     private Long id;
 
     @NotBlank
+    @Column(unique = true)
     private String name;
 
     private double lat;
