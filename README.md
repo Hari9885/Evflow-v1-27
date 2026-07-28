@@ -30,3 +30,5 @@ cd Kishore-v1/evflow-web && npm i && npm run dev
 
 - Hari — frontend, mock API, Android shell, deploys
 - Kishore — Spring Boot backend implementing the frozen contract
+
+Built with help of Claude.
